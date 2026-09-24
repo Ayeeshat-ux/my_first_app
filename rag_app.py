@@ -10,15 +10,19 @@ from langchain_core.output_parsers import StrOutputParser
 # 1. Environment & API Setup
 load_dotenv()
 
-api_key = os.getenv("OPENAI_API_KEY")
+# Safely fetch keys from Streamlit Secrets or environment variables
+api_key = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 base_url = "https://api.groq.com/openai/v1"
 chat_model_name = "openai/gpt-oss-20b"
 
-embedding_api_key = os.getenv("EMBEDDING_API_KEY")
+# Fallback embedding API key to main OPENAI_API_KEY if EMBEDDING_API_KEY isn't explicitly defined
+embedding_api_key = os.getenv("EMBEDDING_API_KEY") or st.secrets.get("EMBEDDING_API_KEY") or api_key
 embedding_base_url = "https://qwen-embed.publicaai.com/v1"
 embedding_model_name = "Qwen/Qwen3-Embedding-0.6B"
 
-store_path = "health_store/health_index.json"
+# Build robust dynamic absolute path for store_path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+store_path = os.path.join(BASE_DIR, "health_store", "health_index.json")
 
 st.set_page_config(page_title="Health Assistant RAG", page_icon="🩺", layout="centered")
 st.title("🩺 Health Specialist Assistant")
@@ -35,7 +39,7 @@ def load_rag_components():
 
     # Persistent Vector Store
     if not os.path.exists(store_path):
-        st.error(f"Vector store not found at `{store_path}`. Ensure your index is built.")
+        st.error(f"Vector store not found at `{store_path}`. Ensure your index is built and pushed to GitHub.")
         st.stop()
 
     healthdb = SKLearnVectorStore(
